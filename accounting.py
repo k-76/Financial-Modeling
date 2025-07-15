@@ -1,13 +1,52 @@
 import safemath
+from datetime import datetime, timedelta, date
 
+class Account():
+    def __init__(self, name):
+        self.name = name
+        self.Transaction_Dates = safemath.indicator()
+        self.Debit_Account = safemath.indicator()
+        self.Credit_Account = safemath.indicator()
+        self.Amount = safemath.indicator()
+        self.add_Transaction('', '', '', 0)
+    def add_Transaction(self, date, _Debit_Account, _Credit_Account, _Amount):
+        if safemath.eq1(date, 0):
+            date = self.Transaction_Dates[date]
+        self.Transaction_Dates.prepend(date)
+        self.Debit_Account.prepend(_Debit_Account)
+        self.Credit_Account.prepend(_Credit_Account)
+        self.Amount.prepend(_Amount)
 def Income_Statement():
     def Revenue():#2 models
-        def Gross_sales_model():
-            return safemath.Decimal(0)
-        def discounts_model():
-            return safemath.Decimal(0)
-        Gross_sales = Gross_sales_model()
-        Less_sales_returns_and_allowances = discounts_model()
+        #Opens Gross Sales
+        _Gross_Sales = Account('Gross_Sales')
+        #Opens a user subscriptions AR
+        _User_Subscriptions = Account('User_Subscriptions_AR')
+        #Opens a Sales Discounts contra revenue account 
+        _Sales_Discounts= Account('Sales_Discounts')
+        def Gross_sales_model(Date1, Gross_Sales, User_Subscriptions):
+            _Amount = safemath.mul1(3, 1500)
+            User_Subscriptions.add_Transaction(Date1, User_Subscriptions.name, Gross_Sales.name, _Amount)
+            Gross_Sales.add_Transaction(Date1, User_Subscriptions.name, Gross_Sales.name, _Amount)
+            return [safemath.add2(User_Subscriptions.Amount.data), Gross_Sales, User_Subscriptions]
+        def sales_returns_and_allowances_model(Date1, User_Subscriptions, Sales_Discounts):
+            _Amount = safemath.mul1(2, 1500)
+            Sales_Discounts.add_Transaction(Date1, Sales_Discounts.name,  User_Subscriptions.name, _Amount)
+            User_Subscriptions.add_Transaction(0, Sales_Discounts.name,  User_Subscriptions.name, _Amount)
+            return [safemath.add2(Sales_Discounts.Amount.data), Sales_Discounts, User_Subscriptions]
+        start_date = date(2025, 1, 1)
+        end_date = date(2027, 12, 1)
+        Date1 = start_date
+        i = 0
+        while safemath.gt1(36, i):
+            m = int(safemath.mod1(safemath.add1(1, i), 12))
+            if safemath.eq1(m, 0):
+                m = 12
+            Date1 = date(2025, m, 1)
+            [Gross_sales, _Gross_Sales, _User_Subscriptions] = Gross_sales_model(Date1, _Gross_Sales, _User_Subscriptions)
+            [Less_sales_returns_and_allowances, _User_Subscriptions, _Sales_Discounts] = sales_returns_and_allowances_model(Date1, _User_Subscriptions, _Sales_Discounts)
+
+            i += 1
         Net_Sales = safemath.add1(Gross_sales, Less_sales_returns_and_allowances)
         return {
             "Gross_sales": Gross_sales,
@@ -52,6 +91,8 @@ def Income_Statement():
             return safemath.Decimal(0)
         def Commissions_model():
             return safemath.Decimal(0)
+        def Depreciation_model():
+            return safemath.Decimal(0)
         def Employee_benefits_model():
             return safemath.Decimal(0)
         def Furniture_and_equipment_model():
@@ -90,7 +131,7 @@ def Income_Statement():
         Bad_debt = Bad_debt_model()
         Commissions = Commissions_model()
         Depreciation = Depreciation_model()
-        Employee_benefits = Employee_benefits()
+        Employee_benefits = Employee_benefits_model()
         Furniture_and_equipment = Furniture_and_equipment_model()
         Insurance = Insurance_model()
         Maintenance_and_repairs = Maintenance_and_repairs_model()
@@ -157,7 +198,8 @@ def Income_Statement():
             "Net_Income": Net_Income
             }
 
-    revenue = Revenue() 
+    revenue = Revenue()
+    print(revenue)
     cogs = COGS(revenue['Net_Sales'])
     expenses = Expenses(cogs['Gross_Profit'])
     btli = Below_the_line_items(expenses['Income_From_Continuing_Operations'])
@@ -168,4 +210,4 @@ def Income_Statement():
         "Below_the_line_items": btli
         }
 
-print(Income_Statement())
+Income_Statement()
